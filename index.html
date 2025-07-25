@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .calculator {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .btn {
+            transition: all 0.2s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background-color: darkred !important;
+            color: white !important;
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .operator-btn {
+            background-color: #f59e0b;
+        }
+        .operator-btn:hover {
+            background-color: darkred !important;
+        }
+        .equals-btn {
+            background-color: #10b981;
+        }
+        .equals-btn:hover {
+            background-color: darkred !important;
+        }
+        .clear-btn {
+            background-color: #ef4444;
+        }
+        .clear-btn:hover {
+            background-color: darkred !important;
+        }
+        @keyframes smoke {
+            0% { opacity: 0.3; transform: translateY(0) scale(1); }
+            50% { opacity: 0.1; transform: translateY(-10px) scale(1.1); }
+            100% { opacity: 0; transform: translateY(-20px) scale(1.2); }
+        }
+        .smoke-effect {
+            position: absolute;
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            animation: smoke 3s ease-out infinite;
+        }
+        .bg-animated {
+            background: linear-gradient(-45deg, #000000, #ffffff, #000000, #ffffff);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body class="bg-animated min-h-screen flex items-center justify-center p-4">
+    <div class="calculator bg-white w-full max-w-xs">
+        <!-- Display -->
+        <div id="display" class="bg-gradient-to-br from-blue-400 via-green-400 to-yellow-300 p-4 text-right overflow-hidden transition-all duration-500">
+            <div id="previous-operand" class="text-gray-400 text-sm h-5"></div>
+            <div id="current-operand" class="text-white text-3xl font-semibold truncate">0</div>
+        </div>
+        
+        <!-- Buttons -->
+        <div class="grid grid-cols-4 gap-1 p-2 bg-gray-100">
+            <!-- Row 1 -->
+            <button class="clear-btn btn col-span-2 bg-red-500 text-white p-4 font-medium rounded" onclick="clearAll()">AC</button>
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="deleteLastChar()">⌫</button>
+            <button class="operator-btn btn text-white p-4 font-medium rounded" onclick="appendOperator('/')">÷</button>
+            
+            <!-- Row 2 -->
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="appendNumber('7')">7</button>
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="appendNumber('8')">8</button>
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="appendNumber('9')">9</button>
+            <button class="operator-btn btn text-white p-4 font-medium rounded" onclick="appendOperator('*')">×</button>
+            
+            <!-- Row 3 -->
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="appendNumber('4')">4</button>
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="appendNumber('5')">5</button>
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="appendNumber('6')">6</button>
+            <button class="operator-btn btn text-white p-4 font-medium rounded" onclick="appendOperator('-')">−</button>
+            
+            <!-- Row 4 -->
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="appendNumber('1')">1</button>
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="appendNumber('2')">2</button>
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="appendNumber('3')">3</button>
+            <button class="operator-btn btn text-white p-4 font-medium rounded" onclick="appendOperator('+')">+</button>
+            
+            <!-- Row 5 -->
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="appendNumber('0')">0</button>
+            <button class="btn bg-gray-200 p-4 font-medium rounded" onclick="appendNumber('.')">.</button>
+            <button class="equals-btn btn col-span-2 text-white p-4 font-medium rounded" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        let currentOperand = '0';
+        let previousOperand = '';
+        let operation = undefined;
+        let resetScreen = false;
+
+        const currentOperandElement = document.getElementById('current-operand');
+        const previousOperandElement = document.getElementById('previous-operand');
+
+        function updateDisplay() {
+            currentOperandElement.innerText = currentOperand;
+            if (operation != null) {
+                previousOperandElement.innerText = `${previousOperand} ${operation}`;
+            } else {
+                previousOperandElement.innerText = '';
+            }
+
+            // Change display color based on operation
+            const display = document.getElementById('display');
+            if (operation === '+') {
+                display.className = 'bg-white text-black p-4 text-right relative overflow-hidden transition-all duration-500';
+            } else if (operation === '-') {
+                display.className = 'bg-black text-white p-4 text-right relative overflow-hidden transition-all duration-500';
+            } else if (operation === '*') {
+                display.className = 'bg-sky-500 text-white p-4 text-right relative overflow-hidden transition-all duration-500';
+            } else if (operation === '/') {
+                display.className = 'bg-pink-500 text-white p-4 text-right relative overflow-hidden transition-all duration-500';
+            } else if (operation === undefined && currentOperand !== '0') {
+                display.className = 'bg-yellow-400 text-black p-4 text-right relative overflow-hidden transition-all duration-500';
+            } else {
+                display.className = 'bg-green-500 text-white p-4 text-right relative overflow-hidden transition-all duration-500';
+            }
+        }
+
+        function appendNumber(number) {
+            if (currentOperand === '0' || resetScreen) {
+                currentOperand = number;
+                resetScreen = false;
+            } else {
+                if (number === '.' && currentOperand.includes('.')) return;
+                currentOperand += number;
+            }
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            if (currentOperand === '') return;
+            if (previousOperand !== '') {
+                calculate();
+            }
+            operation = op;
+            previousOperand = currentOperand;
+            currentOperand = '';
+            updateDisplay();
+        }
+
+        function calculate() {
+            let computation;
+            const prev = parseFloat(previousOperand);
+            const current = parseFloat(currentOperand);
+            if (isNaN(prev) || isNaN(current)) return;
+            
+            switch (operation) {
+                case '+':
+                    computation = prev + current;
+                    break;
+                case '-':
+                    computation = prev - current;
+                    break;
+                case '*':
+                    computation = prev * current;
+                    break;
+                case '/':
+                    computation = prev / current;
+                    break;
+                default:
+                    return;
+            }
+            
+            currentOperand = computation.toString();
+            operation = undefined;
+            previousOperand = '';
+            resetScreen = true;
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentOperand = '0';
+            previousOperand = '';
+            operation = undefined;
+            updateDisplay();
+        }
+
+        function deleteLastChar() {
+            if (currentOperand.length === 1 || (currentOperand.length === 2 && currentOperand.startsWith('-'))) {
+                currentOperand = '0';
+            } else {
+                currentOperand = currentOperand.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') appendNumber(e.key);
+            else if (e.key === '.') appendNumber('.');
+            else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
+                appendOperator(e.key);
+            }
+            else if (e.key === 'Enter' || e.key === '=') calculate();
+            else if (e.key === 'Escape') clearAll();
+            else if (e.key === 'Backspace') deleteLastChar();
+        });
+    </script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - 🧬 <a href="https://enzostvs-deepsite.hf.space?remix=kumar500/classic-calcculator" style="color: #fff;text-decoration: underline;" target="_blank" >Remix</a></p></body>
+</html>
